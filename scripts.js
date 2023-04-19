@@ -1,12 +1,16 @@
-const express = require('express');
 const axios = require('axios');
-const app = express();
-const PORT = 3000;
+const mongoose = require('mongoose');
+const Models = require('./models.js');
+const teamData = Models.teamData;
+const DrSanicData = Models.DrSanicData;
+const InspiringPotatoData = Models.InspiringPotatoData;
+const YahuData = Models.YahuData;
+const MilkdrakeData = Models.MilkdrakeData;
+const birdboysData = Models.birdboysData;
 
-app.use(express.static('public'));
 
 // DONT FUCK WTIH THIS ONE 
-const match = "df8ab3d6-41de-474d-913f-2fdfcbdf3ce9";
+const match = "9d40dae3-cb17-4999-aa9d-b1700f2cd536";
 // DONT FUCK WITH THIS ONE EITHER
 const playersList = [
   {id: "a200cf03-30ec-5f98-9ee6-7941778ee290", name: "InspiringPotato"},
@@ -100,14 +104,14 @@ async function getPlayerData(){
     const adr = players[team].filter(i => player.id === i.puuid)[0].damage_made / metadata.rounds_played;
     finalData[player.name].ADR = Number(adr.toFixed(2));
   }
-    console.log(finalData);
+    // console.log(finalData);
     return finalData;
   } catch (e) {
     console.log(e)
   }
 }
 //Returns Team Data
-async function getTeamData(url){
+async function getTeamData(){
   try {
     //Constructing the returned array
     let teamData = 
@@ -139,7 +143,7 @@ async function getTeamData(url){
       comp: {
         InspiringPotato: "",
         Milkdrake: "",
-        YahuThe7th: "",
+        Yahu: "",
         DrSanic: "",
         birdboys: ""
       }
@@ -266,15 +270,37 @@ async function getTeamData(url){
       const currentPlayer = players.all_players.find(p => p.puuid === puuidToFind);
       teamData.comp[player.name] = currentPlayer.character
     }
-    console.log(teamData);
+    // console.log(teamData);
     return teamData;
   } catch (e) {
     console.log(e);
   }
 }
 
-getPlayerData();
-getTeamData();
+const connectDB = async () => {
+  try {
+      mongoose.connect('mongodb://127.0.0.1:27017/BYDO', { useNewUrlParser: true, useUnifiedTopology: true });
+      console.log("Connected to database sucesfully");
+      const data = await getTeamData();
+      const playerData = await getPlayerData();
+      const DrSanicStats = playerData.DrSanic;
+      const YahuStats = playerData.Yahu;
+      const birdboysStats = playerData.birdboys;
+      const InspiringPotatoStats = playerData.InspiringPotato;
+      const MilkdrakeStats = playerData.Milkdrake;
+      await teamData.create(data);
+      await DrSanicData.create(DrSanicStats);
+      await YahuData.create(YahuStats);
+      await birdboysData.create(birdboysStats);
+      await InspiringPotatoData.create(InspiringPotatoStats);
+      await MilkdrakeData.create(MilkdrakeStats);
+      console.log("Data Sucesfully Uploaded");
+  } catch (e) {
+      console.log(e);
+  }
+}
+
+connectDB()
 
 //   app.listen(PORT, (e) => {
 //     if (e) console.log(e);
